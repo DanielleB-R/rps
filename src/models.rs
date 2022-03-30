@@ -1,17 +1,19 @@
 use super::schema::users;
 use diesel::{Insertable, Queryable};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Queryable)]
+#[derive(Debug, Clone, Queryable, Serialize)]
 pub struct User {
     pub id: i32,
     pub name: String,
     pub pronouns: String,
     pub age: i32,
+    #[serde(skip)]
     pub deleted: bool,
     pub username: String,
 }
 
-#[derive(Debug, Clone, Insertable)]
+#[derive(Debug, Clone, Insertable, Deserialize)]
 #[table_name = "users"]
 pub struct NewUser<'a> {
     pub name: &'a str,

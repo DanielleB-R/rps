@@ -1,14 +1,35 @@
-use rps::db;
+#[macro_use]
+extern crate rocket;
+use rocket::serde::json;
+use serde::Deserialize;
 
-fn main() {
-    let connection = db::establish_connection();
+use rps::models::{NewUser, User};
 
-    let user = db::create_user(&connection, "danielle", "Danielle", "she/her", 38)
-        .expect("Insert should succeed");
+#[get("/user/id/<id>")]
+fn get_user_by_id(id: i32) -> json::Json<User> {
+    json::Json(User {
+        id,
+        name: "Danielle".to_owned(),
+        pronouns: "she/her".to_owned(),
+        age: 38,
+        deleted: false,
+        username: "danielle".to_owned(),
+    })
+}
 
-    println!("{:?}", user);
+#[post("/user", data = "<input>")]
+fn create_user(input: json::Json<NewUser>) -> json::Json<User> {
+    json::Json(User {
+        id: 20,
+        name: input.name.to_owned(),
+        pronouns: input.pronouns.to_owned(),
+        age: input.age,
+        deleted: false,
+        username: input.username.to_owned(),
+    })
+}
 
-    let user_again = db::get_user_by_id(&connection, user.id).expect("Row should exist");
-
-    println!("{:?}", user_again);
+#[launch]
+fn rocket() -> _ {
+    rocket::build().mount("/", routes![get_user_by_id, create_user])
 }

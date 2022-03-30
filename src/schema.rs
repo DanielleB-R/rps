@@ -5,5 +5,6 @@ table! {
         pronouns -> Varchar,
         age -> Int4,
         deleted -> Bool,
+        username -> Varchar,
     }
 }

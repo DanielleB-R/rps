@@ -21,3 +21,12 @@ pub struct NewUser<'a> {
     pub age: i32,
     pub username: &'a str,
 }
+
+#[derive(Debug, Clone, Insertable, Deserialize)]
+#[table_name = "users"]
+pub struct NewUserOwned {
+    pub name: String,
+    pub pronouns: String,
+    pub age: i32,
+    pub username: String,
+}

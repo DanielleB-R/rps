@@ -1,0 +1,2 @@
+[global.databases.rps]
+url = "postgres://postgres:abc123@localhost/rps"

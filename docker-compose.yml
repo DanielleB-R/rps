@@ -7,3 +7,9 @@ postgres:
     - POSTGRES_DB=rps
     - POSTGRES_USER=postgres
     - POSTGRES_PASSWORD=abc123
+
+redis:
+  image: redis:alpine
+  hostname: redis
+  ports:
+    - 6379:6379

@@ -1,5 +1,16 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use thiserror::Error;
+
+#[derive(Debug, Clone, Error)]
+pub enum GameError {
+    #[error("the current player has already played this round")]
+    AlreadyMoved,
+    #[error("the given player id is not involved in this game")]
+    InvalidPlayer,
+    #[error("the game is already over")]
+    GameEnded,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -85,39 +96,55 @@ impl Game {
         &mut self.rounds[len - 1]
     }
 
-    pub fn play1(&mut self, action: Move) {
+    pub fn play1(&mut self, action: Move) -> Result<bool, GameError> {
         let mut round = self.current_round();
 
         if round.0.is_some() {
-            panic!("Player 1 already moved")
+            return Err(GameError::AlreadyMoved);
         }
         round.0 = Some(action);
-        if round.is_complete() && !self.check_end() {
-            self.rounds.push(Default::default())
+
+        if !round.is_complete() {
+            return Ok(false);
+        }
+
+        if self.check_end() {
+            Ok(true)
+        } else {
+            self.rounds.push(Default::default());
+            Ok(false)
         }
     }
 
-    pub fn play2(&mut self, action: Move) {
+    pub fn play2(&mut self, action: Move) -> Result<bool, GameError> {
         let mut round = self.current_round();
 
         if round.1.is_some() {
-            panic!("Player 2 already moved")
+            return Err(GameError::AlreadyMoved);
         }
         round.1 = Some(action);
-        if round.is_complete() && !self.check_end() {
-            self.rounds.push(Default::default())
+
+        if !round.is_complete() {
+            return Ok(false);
+        }
+
+        if self.check_end() {
+            Ok(true)
+        } else {
+            self.rounds.push(Default::default());
+            Ok(false)
         }
     }
 
-    pub fn play_by_id(&mut self, player_id: i32, action: Move) -> Option<bool> {
-        if self.player1 == player_id {
-            self.play1(action);
-            Some(self.check_end())
+    pub fn play_by_id(&mut self, player_id: i32, action: Move) -> Result<bool, GameError> {
+        if self.winner.is_some() {
+            Err(GameError::GameEnded)
+        } else if self.player1 == player_id {
+            self.play1(action)
         } else if self.player2 == player_id {
-            self.play2(action);
-            Some(self.check_end())
+            self.play2(action)
         } else {
-            None
+            Err(GameError::InvalidPlayer)
         }
     }
 

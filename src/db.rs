@@ -65,3 +65,16 @@ pub fn create_game(
 
     diesel::insert_into(table).values(record).get_result(conn)
 }
+
+pub fn store_game_winner(
+    conn: &PgConnection,
+    id: i32,
+    winner_id: i32,
+    rounds: i32,
+) -> QueryResult<models::GameRecord> {
+    use crate::schema::games;
+
+    diesel::update(games::table.find(id))
+        .set((games::winner.eq(winner_id), games::rounds.eq(rounds)))
+        .get_result(conn)
+}

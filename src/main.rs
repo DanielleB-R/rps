@@ -84,6 +84,7 @@ struct MoveInput {
 
 #[post("/game/<id>/move", data = "<input>")]
 async fn make_move(
+    postgres: RpsDatabaseConnection,
     redis: &State<redis::Client>,
     id: usize,
     input: json::Json<MoveInput>,
@@ -95,11 +96,20 @@ async fn make_move(
         .unwrap()?;
 
     match game.play_by_id(input.player_id, input.action) {
-        None => Some((Status::BadRequest, json::Json(game))),
-        Some(_) => {
+        Err(_) => Some((Status::BadRequest, json::Json(game))),
+        Ok(done) => {
+            if done {
+                let winner_id = game.winner.unwrap();
+                let rounds = game.rounds.len();
+                postgres
+                    .run(move |c| db::store_game_winner(c, id as i32, winner_id, rounds as i32))
+                    .await
+                    .unwrap();
+            }
             rps::save_game::save_game_async(&mut con, &game)
                 .await
                 .unwrap();
+
             Some((Status::Ok, json::Json(game)))
         }
     }

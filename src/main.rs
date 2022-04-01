@@ -5,12 +5,12 @@ use rocket::response::status;
 use rocket::serde::json;
 use rocket::State;
 
-use rocket_sync_db_pools::{database, diesel};
-
 use serde::Deserialize;
 
 use rps::db;
+use rps::db_connection::RpsDatabaseConnection;
 use rps::game::{Game, Move};
+use rps::management::NewGameError;
 use rps::models::{NewUserOwned, User};
 
 #[get("/user/id/<id>")]
@@ -48,21 +48,22 @@ async fn create_user(
         })
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
-struct NewGameInput {
-    player1: i32,
-    player2: i32,
-}
-
 #[post("/game", data = "<input>")]
 async fn new_game(
+    postgres: RpsDatabaseConnection,
     redis: &State<redis::Client>,
-    input: json::Json<NewGameInput>,
-) -> (Status, Option<json::Json<Game>>) {
-    //TODO: Check in Postgres for the users
-
-    let game = Game::new(rand::random(), input.player1, input.player2);
-    (Status::Created, Some(json::Json(game)))
+    input: json::Json<rps::management::NewGameInput>,
+) -> Result<(Status, json::Json<Game>), (Status, String)> {
+    let mut con = redis.get_tokio_connection().await.unwrap();
+    rps::management::new_game(postgres, &mut con, input.into_inner())
+        .await
+        .map(|new_game| (Status::Created, json::Json(new_game)))
+        .map_err(|err| match err {
+            NewGameError::Player1NotFound
+            | NewGameError::Player2NotFound
+            | NewGameError::PlayersAreSame => (Status::BadRequest, err.to_string()),
+            err => (Status::InternalServerError, err.to_string()),
+        })
 }
 
 #[get("/game/<id>")]
@@ -103,9 +104,6 @@ async fn make_move(
         }
     }
 }
-
-#[database("rps")]
-struct RpsDatabaseConnection(diesel::PgConnection);
 
 #[catch(404)]
 fn not_found() -> status::NotFound<()> {

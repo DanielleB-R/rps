@@ -2,10 +2,12 @@
 extern crate rocket;
 use rocket::response::status;
 use rocket::serde::json;
+use rocket::State;
 
 use rocket_sync_db_pools::{database, diesel};
 
 use rps::db;
+use rps::game::Game;
 use rps::models::{NewUserOwned, User};
 
 #[get("/user/id/<id>")]
@@ -29,6 +31,16 @@ async fn create_user(
     json::Json(new_user)
 }
 
+#[get("/game/id/<id>")]
+async fn get_game(client: &State<redis::Client>, id: usize) -> Option<json::Json<Game>> {
+    let mut con = client.get_tokio_connection().await.unwrap();
+
+    rps::save_game::retrieve_game_async(&mut con, id)
+        .await
+        .unwrap()
+        .map(|game| json::Json(game))
+}
+
 #[database("rps")]
 struct RpsDatabaseConnection(diesel::PgConnection);
 
@@ -40,7 +52,8 @@ fn not_found() -> status::NotFound<()> {
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![get_user_by_id, create_user])
+        .mount("/", routes![get_user_by_id, create_user, get_game])
         .register("/", catchers![not_found])
+        .manage(redis::Client::open("redis://localhost/").unwrap())
         .attach(RpsDatabaseConnection::fairing())
 }

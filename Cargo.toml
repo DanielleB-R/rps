@@ -10,7 +10,7 @@ diesel = { version = "1.4.8", features = ["postgres"] }
 dotenv = "0.15.0"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
 serde = "1.0.136"
-redis = "0.21.5"
+redis = { version = "0.21.5", features = ["tokio-comp"] }
 serde_json = "1.0.79"
 
 [dependencies.rocket_sync_db_pools]

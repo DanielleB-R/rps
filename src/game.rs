@@ -109,6 +109,18 @@ impl Game {
         }
     }
 
+    pub fn play_by_id(&mut self, player_id: i32, action: Move) -> Option<bool> {
+        if self.player1 == player_id {
+            self.play1(action);
+            Some(self.check_end())
+        } else if self.player2 == player_id {
+            self.play2(action);
+            Some(self.check_end())
+        } else {
+            None
+        }
+    }
+
     pub fn check_end(&mut self) -> bool {
         let p1_wins: u8 = self
             .rounds

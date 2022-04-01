@@ -30,3 +30,19 @@ pub struct NewUserOwned {
     pub age: i32,
     pub username: String,
 }
+
+#[derive(Debug, Clone, Queryable)]
+pub struct GameRecord {
+    id: i32,
+    player_1: i32,
+    player_2: i32,
+    winner: Option<i32>,
+    rounds: Option<i32>,
+}
+
+#[derive(Debug, Clone, Insertable, Deserialize)]
+#[table_name = "games"]
+pub struct NewGameRecord {
+    player_1: i32,
+    player_2: i32,
+}

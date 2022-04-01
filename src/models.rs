@@ -1,4 +1,4 @@
-use super::schema::users;
+use super::schema::{games, users};
 use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 
@@ -33,16 +33,16 @@ pub struct NewUserOwned {
 
 #[derive(Debug, Clone, Queryable)]
 pub struct GameRecord {
-    id: i32,
-    player_1: i32,
-    player_2: i32,
-    winner: Option<i32>,
-    rounds: Option<i32>,
+    pub id: i32,
+    pub player_1: i32,
+    pub player_2: i32,
+    pub winner: Option<i32>,
+    pub rounds: Option<i32>,
 }
 
 #[derive(Debug, Clone, Insertable, Deserialize)]
 #[table_name = "games"]
 pub struct NewGameRecord {
-    player_1: i32,
-    player_2: i32,
+    pub player_1: i32,
+    pub player_2: i32,
 }

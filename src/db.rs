@@ -56,3 +56,12 @@ pub fn get_user_by_username(
         .first(conn)
         .optional()
 }
+
+pub fn create_game(
+    conn: &PgConnection,
+    record: &models::NewGameRecord,
+) -> QueryResult<models::GameRecord> {
+    use crate::schema::games::table;
+
+    diesel::insert_into(table).values(record).get_result(conn)
+}

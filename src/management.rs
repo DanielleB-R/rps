@@ -1,6 +1,7 @@
 use crate::db;
 use crate::db_connection::RpsDatabaseConnection;
 use crate::game::Game;
+use crate::models;
 use crate::save_game;
 
 use redis::aio::Connection;
@@ -45,9 +46,15 @@ pub async fn new_game(
         .await?
         .ok_or(NewGameError::Player2NotFound)?;
 
-    let id = rand::random();
+    let new_game_record = models::NewGameRecord {
+        player_1: player1.id,
+        player_2: player2.id,
+    };
+    let game_record = postgres
+        .run(move |c| db::create_game(c, &new_game_record))
+        .await?;
 
-    let game = Game::new(id, player1.id, player2.id);
+    let game = Game::new(game_record.id as usize, player1.id, player2.id);
 
     save_game::save_game_async(redis, &game).await?;
 

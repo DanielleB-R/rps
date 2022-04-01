@@ -12,6 +12,7 @@ serde = "1.0.136"
 redis = { version = "0.21.5", features = ["tokio-comp"] }
 serde_json = "1.0.79"
 rand = "0.8.5"
+thiserror = "1.0.30"
 
 [dependencies.rocket_sync_db_pools]
 version = "0.1.0-rc.1"

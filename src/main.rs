@@ -16,7 +16,21 @@ use rps::models::{NewUserOwned, User};
 #[get("/user/id/<id>")]
 async fn get_user_by_id(conn: RpsDatabaseConnection, id: i32) -> Option<json::Json<User>> {
     Some(json::Json(
-        conn.run(move |c| db::get_user_by_id(c, id)).await.ok()?,
+        conn.run(move |c| db::get_user_by_id(c, id))
+            .await
+            .unwrap()?,
+    ))
+}
+
+#[get("/user/username/<username>")]
+async fn get_user_by_username(
+    conn: RpsDatabaseConnection,
+    username: String,
+) -> Option<json::Json<User>> {
+    Some(json::Json(
+        conn.run(move |c| db::get_user_by_username(c, &username))
+            .await
+            .unwrap()?,
     ))
 }
 
@@ -24,14 +38,14 @@ async fn get_user_by_id(conn: RpsDatabaseConnection, id: i32) -> Option<json::Js
 async fn create_user(
     conn: RpsDatabaseConnection,
     input: json::Json<NewUserOwned>,
-) -> json::Json<User> {
-    let new_user = conn
-        .run(move |c| db::create_user_struct(c, &input))
+) -> Result<json::Json<User>, Status> {
+    conn.run(move |c| db::create_user_struct(c, &input))
         .await
-        // TODO: Return a 400 when we get a constraint violation
-        .unwrap();
-
-    json::Json(new_user)
+        .map(|new_user| json::Json(new_user))
+        .map_err(|err| match err {
+            db::CreateUserError::ConflictingUsernameError => Status::BadRequest,
+            _ => Status::InternalServerError,
+        })
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -103,7 +117,14 @@ fn rocket() -> _ {
     rocket::build()
         .mount(
             "/",
-            routes![get_user_by_id, create_user, get_game, make_move],
+            routes![
+                get_user_by_id,
+                get_user_by_username,
+                create_user,
+                new_game,
+                get_game,
+                make_move
+            ],
         )
         .register("/", catchers![not_found])
         .manage(redis::Client::open("redis://localhost/").unwrap())
